@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 专属贺卡</title>
+    <style>
+        :root {
+            --env-color: #e74c3c;
+            --env-dark: #c0392b;
+            --gold: linear-gradient(135deg, #cfb53b 0%, #f7ef8a 50%, #aa771c 100%);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #0a0a0a; /* 改为深色背景，让烟花和鎏金更显眼 */
+            overflow: hidden;
+            font-family: "STKaiti", "KaiTi", serif;
+            cursor: pointer;
+        }
+
+        /* 烟花画布 */
+        #fireworksCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* 装饰元素容器 */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 鎏金马 - 放在信封上方 */
+        .golden-horse {
+            width: 160px;
+            height: 100px;
+            background: var(--gold);
+            -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M464 256C464 207.8 440.6 161.7 399.7 131.6L363.3 104.4C324.9 75.83 274.5 59.94 222.8 59.94C189.9 59.94 157.9 68.64 129.4 85.12L73.1 117.8C30.65 142.3 0 188.1 0 240C0 279.7 18.2 316.5 47.9 339L91.1 371.4C122.9 395.2 161.5 408 201.7 408H352C414.7 408 464 358.7 464 296C464 278 460.7 263 456.9 256L464 256zM320 256C320 220.7 291.3 192 256 192S192 220.7 192 256S220.7 320 256 320S320 291.3 320 256zM480 32C480 14.33 465.7 0 448 0C430.3 0 416 14.33 416 32C416 49.67 430.3 64 448 64C465.7 64 480 49.67 480 32zM272 80C272 97.67 257.7 112 240 112C222.3 112 208 97.67 208 80C208 62.33 222.3 48 240 48C257.7 48 272 62.33 272 80zM64 432C64 449.7 49.67 464 32 464C14.33 464 0 449.7 0 432C0 414.3 14.33 400 32 400C49.67 400 64 414.3 64 432z"></path></svg>') no-repeat center / contain;
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M464 256C464 207.8 440.6 161.7 399.7 131.6L363.3 104.4C324.9 75.83 274.5 59.94 222.8 59.94C189.9 59.94 157.9 68.64 129.4 85.12L73.1 117.8C30.65 142.3 0 188.1 0 240C0 279.7 18.2 316.5 47.9 339L91.1 371.4C122.9 395.2 161.5 408 201.7 408H352C414.7 408 464 358.7 464 296C464 278 460.7 263 456.9 256L464 256zM320 256C320 220.7 291.3 192 256 192S192 220.7 192 256S220.7 320 256 320S320 291.3 320 256zM480 32C480 14.33 465.7 0 448 0C430.3 0 416 14.33 416 32C416 49.67 430.3 64 448 64C465.7 64 480 49.67 480 32zM272 80C272 97.67 257.7 112 240 112C222.3 112 208 97.67 208 80C208 62.33 222.3 48 240 48C257.7 48 272 62.33 272 80zM64 432C64 449.7 49.67 464 32 464C14.33 464 0 449.7 0 432C0 414.3 14.33 400 32 400C49.67 400 64 414.3 64 432z"></path></svg>') no-repeat center / contain;
+            margin-bottom: 20px;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        /* 红色 2026 */
+        .year-2026 {
+            font-size: 140px; /* 放大一倍 */
+            color: var(--env-color);
+            font-weight: bold;
+            font-family: 'Arial Black', sans-serif;
+            margin-top: 40px;
+            opacity: 0;
+            transition: opacity 1s;
+            text-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+        }
+
+        /* 信封 */
+        .envelope-wrapper {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background: var(--env-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 0 0 5px 5px;
+        }
+
+        .flap {
+            position: absolute;
+            top: 0; left: 0; width: 0; height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 100px solid var(--env-dark);
+            transform-origin: top;
+            transition: transform 0.6s ease;
+            z-index: 4;
+        }
+
+        .open .flap { transform: rotateX(180deg); z-index: 1; }
+
+        .pocket {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--env-color); z-index: 3;
+            clip-path: polygon(0 0, 150px 100px, 300px 0, 300px 200px, 0 200px);
+        }
+
+        .letter {
+            position: absolute; bottom: 5px; left: 10%; width: 80%;
+            height: 180px; background: white; padding: 15px;
+            box-sizing: border-box; transition: transform 0.8s ease 0.3s, opacity 0.5s;
+            z-index: 2; overflow-y: auto; opacity: 0;
+        }
+
+        .open .letter { transform: translateY(-130px); opacity: 1; height: 240px; }
+
+        .gold-name { background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; font-size: 18px; margin-bottom: 10px; }
+        .text-content { color: #333; line-height: 1.6; font-size: 15px; white-space: pre-line; }
+
+        .hint { position: absolute; bottom: 10%; color: #eee; font-size: 14px; animation: breathe 2s infinite; z-index: 20; }
+        @keyframes breathe { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body onclick="handleOpen()">
+
+    <canvas id="fireworksCanvas"></canvas>
+
+    <div class="hint" id="hint">一一 点击开启 2026 专属贺卡 一一</div>
+
+    <div class="main-container">
+        <div class="golden-horse" id="horse"></div>
+        
+        <div class="envelope-wrapper" id="envelope">
+            <div class="flap"></div>
+            <div class="pocket"></div>
+            <div class="letter">
+                <div id="nameDisplay" class="gold-name">致朋友：</div>
+                <div id="messageDisplay" class="text-content">祝你新年快乐！</div>
+            </div>
+        </div>
+
+        <div class="year-2026" id="year">2026</div>
+    </div>
+
+    <script>
+        // 名单配置
+        const config = {
+            "我的英雌": "愿你新的一年，\n龙马精神，科研顺利！\n代码永无 Bug，万事胜意。",
+            "大金毛先生": "岁末年初，总想给重要的人写点什么。\n这一年风云变幻，生活似乎总是充满了突如其来的挑战。\n在这样的一年里，我愈发觉得，那些能够互相祝福、彼此珍惜的关系，才是最值得握紧的确定性。\n很高兴，在这个马年的路口，我们依然同行。\n\n今年是我们一起走过的第二年，回看这一路，真的攒下了好多值得反复回味的瞬间。\n无论是热热闹闹地过生日、在雪场并肩滑行，还是那些平凡日子里一起钻进厨房、散步、按摩的琐碎，都让我真切感受到，感情最珍贵的样子就是这种细水长流的守候。\n谢谢你教会了我什么是真正的理解与尊重，你为我做的每一顿饭、为我考虑的每一个细小瞬间，我其实都偷偷记在了心里。\n有你在，那些原本孤单的时刻都变得有了温度，你就是我最心安的存在。\n\n马年将至，希望我的大金毛先生在新的一年里，身体棒棒的，学术上能有那种“灵光一现”的大突破（实验顺遂，Paper必中！）。\n当然，最重要的是要在忙碌的研究生活里，留出更多让自己开心和放松的空隙。\n我们要一起把生活过得更丰富、更有趣呀。",
+            "我的英雌": "岁末年初，总想给重要的人写点什么。\n这一年风云变幻，生活似乎总是充满了突如其来的挑战。\n在这样的一年里，我愈发觉得，那些能够互相祝福、彼此珍惜的关系，才是最值得握紧的确定性。\n很高兴，在这个马年的路口，我们依然同行。\n\n在我心里，你一直是我最钦佩的“英雌”。最难忘我最焦虑、甚至怀疑生活的时候，是你说即便我没有经济来源你也会支持我——我知道那是真话，而那份沉甸甸的义气是我对抗世界的底气。\n我也一直默默看着你：看着你在生活的磨难和裁员的阴影里，依然能靠运动、靠构筑秩序来稳住自己；看着你在见识过世界的复杂后，依然选择做一个能看见他人痛苦的“天使”。\n你对价值观的坚持、以及那份知黑守白的勇敢，构成了你最迷人也最独特的光芒。\n对我来说，你不仅是朋友，更是家人。\n\n马年到了，我想祝你在这个变化多端的世界里，活得越来越自由，也越来越自洽。\n愿你策马扬鞭去往想去的地方，也愿你内心始终有一片不被惊扰的荒原。\n你很重要，这一点请务必记得。",
+            "33": "岁末年初，总想给重要的人写点什么。\n这一年风云变幻，生活似乎总是充满了突如其来的挑战。\n在这样的一年里，我愈发觉得，那些能够互相祝福、彼此珍惜的关系，才是最值得握紧的确定性。\n很高兴，在这个马年的路口，我们依然同行。\n\n回望这一年，我很庆幸我们之间依然保持着这种高质而松弛的连接。\n你是一个少有的、能让人感到“如其所是”的朋友，那种在你面前可以不加掩饰的坦然，对我来说意义重大。\n你来家里小住的日子是我记忆中一段极具安全感的时光。\n我发现你是一个非常卓越的观察者和陪伴者，总能敏锐地察觉到我的缺失并给予关照。\n在你面前，我得以卸下所有的社交伪装，这种彻底的放松源于我们对彼此本真样貌的认可。\n我很珍惜这种真率的连接，它让我们在探讨问题时，总能提供给对方缺失的维度。\n对我而言，这份无需多言的信任，以及基于价值观认可的真率，构成了我们友谊中最稳固的底色。\n\n进入马年，既然你希望明年更好，那就祝你得偿所愿，万事顺转。\n愿你在你所构建的逻辑世界里游刃有余，也愿我们能继续在这有趣的人间并肩探索。",
+            "英子": "岁末年初，总想给重要的人写点什么。\n这一年风云变幻，生活似乎总是充满了突如其来的挑战。\n在这样的一年里，我愈发觉得，那些能够互相祝福、彼此珍惜的关系，才是最值得握紧的确定性。\n很高兴，在这个马年的路口，我们依然同行。\n\n你对我而言，是一个极其特别的存在。我们拥有如此接近的最终愿景，这种同频感让我觉得在向某些“邪恶势力”开战时，自己并不孤单。\n我很欣赏你身上那种敏锐的洞察力，你前瞻性的思维总能像风一样掠过重重迷雾，给我带来不一样的光彩。\n也谢谢你带给我那些从未有过的珍贵情感，让我懂得在短暂的时光里，去珍惜与表达的意义。\n最令我动容的，是你那份在见证过阴暗后依然选择拥抱善良的纯粹。\n我知道，无论何时何地，只要我回头，你一定会在那里支持我，这份感激我一直深藏于心。\n\n马年到了，希望你在事业和生活都上策马扬鞭，大杀四方，多赚大钱！\n愿你在生活里能遇见更多有趣的、值得探索的奇遇。\n新的一年，咱们继续并肩，活得热烈且清醒。",
+            "叶子": "岁末年初，总想给重要的人写点什么。\n这一年风云变幻，生活似乎总是充满了突如其来的挑战。\n在这样的一年里，我愈发觉得，那些能够互相祝福、彼此珍惜的关系，才是最值得握紧的确定性。\n很高兴，在这个马年的路口，我们依然同行。\n\n虽然最近联系渐少，但你在我心里一直有着很特殊的分量。\n我始终记得大学时期的我们，见证过你在情绪深渊里的挣扎与迷茫，所以现在看到你精准地判断出自己的优势，并利用各种资源做成那么多出色的社群和活动时，我由衷地感到佩服和骄傲。\n你身上那种极强的生命力和影响力，曾深深地打动过参与其中的我。\n在我看来，你最珍贵的地方在于那种“习惯性积极”的视角，这种温暖、灵活且灵动的特质，就像你喜欢的芳香精油一样，在不同时期带给我不同的疗愈感。\n对我来说，你已经和那些香气交织在一起，成了我心中“温暖”的代名词。\n\n马年到了，祝你即便遇到挑战也能迎来柳暗花明的转机。\n愿你不断向理想的自己靠近，身边环绕的都是契合、温暖的人和事。\n无论时光如何流转，希望你永远灵动如初。",
+            "默认": "祝你 2026 身体健康，\n万事顺遂，每天都有好心情！"
+        };
+
+        const urlName = new URLSearchParams(window.location.search).get('name');
+        document.getElementById('nameDisplay').innerText = "致 " + (urlName || "朋友") + "：";
+        document.getElementById('messageDisplay').innerText = config[urlName] || config["默认"];
+
+        // 打开信封逻辑
+        let isOpened = false;
+        function handleOpen() {
+            if(isOpened) return;
+            isOpened = true;
+            document.getElementById('envelope').classList.add('open');
+            document.getElementById('hint').style.display = 'none';
+            document.getElementById('horse').style.opacity = '1';
+            document.getElementById('year').style.opacity = '1';
+            startAutoFireworks(); // 开启自动烟花
+        }
+
+        // --- 烟花动画系统 ---
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let autoFire = false;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y; this.color = color;
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 8,
+                    y: (Math.random() - 0.5) * 8
+                };
+                this.alpha = 1;
+                this.friction = 0.95;
+            }
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+            update() {
+                this.velocity.x *= this.friction;
+                this.velocity.y *= this.friction;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.015;
+            }
+        }
+
+        function createFirework(x, y) {
+            const colors = ['#ff0040', '#00ffcc', '#feff00', '#ff00ff', '#00ff00', '#ff8000', '#ffffff'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const count = 60 + Math.random() * 40;
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.2)'; // 形成拖尾效果
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach((p, i) => {
+                if (p.alpha > 0) {
+                    p.update();
+                    p.draw();
+                } else {
+                    particles.splice(i, 1);
+                }
+            });
+
+            if (autoFire && Math.random() < 0.05) { // 自动随机绽放频率
+                createFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.7);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function startAutoFireworks() {
+            autoFire = true;
+        }
+
+        animate();
+    </script>
+</body>
+</html>
